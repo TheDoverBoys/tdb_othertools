@@ -4,7 +4,7 @@ from fractions import Fraction
 sys.setrecursionlimit(1000)
 
 class SsfourReader:
-    def __init__(self, data):
+    def __init__(self, data, output):
         self.data = data
         chunks = self.getHeaders(self.data)
         tempo = self.parseTempo(chunks[0])
@@ -13,7 +13,7 @@ class SsfourReader:
         for i in range(2, len(chunks)):
             chart = self.parseNotes(chunks[i])
             charts.append(chart)
-        self.writeSm(tempo, events, charts)
+        self.writeSm(output, tempo, events, charts)
         print("Loaded successfully!")
 
     def getHeaders(self, bindata):
@@ -136,8 +136,7 @@ class SsfourReader:
                 return __chart_type.get(__chart), __difficulty_type.get(__difficulty), __beats, __notes, __freezeends, 4
         return
     
-    def writeSm(self, tempo, events, charts):
-        output = open(file+".sm", "w")
+    def writeSm(self, output, tempo, events, charts):
         output.write("#TITLE:Untitled;\n#ARTIST:;\n#MUSIC:song.ogg;\n")
         __tempoString = "#OFFSET:"+str(tempo[3])+";\n#BPMS:"
         for t_event in range(len(tempo)-2): #-1):
@@ -214,7 +213,8 @@ class SsfourReader:
                         output.write("\n")
                     if measureindex != len(__measureAppend)-1:
                         output.write(",\n")
-            output.write(";\n\n")
+                output.write(";\n\n")
+            
     
     def verifyingroup(self, group, number):
         for i in range(len(group)):
@@ -254,7 +254,137 @@ class SsfourReader:
                     self.__group[index][3] = 192
         return self.__group
         
+class MergeCouples:
+    def __init__(self, file, output):
+        __unconcatenated = open("output"+output, "w")
+        __charts = []
+        self.sectionFinder(str(file), __unconcatenated)
+        
+    def sectionFinder(self, file, outputfile):
+        self.file = file.splitlines( )
+        __ranges = []
+        __ends = []
+        __leftranges = []
+        __rightranges = []
+        #find sections
+        for line_number, line in enumerate(self.file, start=1):
+            self.findSection(__ranges, 'dance-', line, line_number)
+            if line == ';':
+                __ends.append(line_number)
+        if len(__ranges) == len(__ends):
+            for sections in range(len(__ranges)):
+                __ranges[sections] = [__ranges[sections], __ends[sections]]
+        for line_number, line in enumerate(self.file, start=1):
+            for start_length in range(len(__ranges)):
+                if line == self.file[__ranges[start_length][0]-1]:
+                    self.findSection(__leftranges, 'dance-couple', line, [__ranges[start_length][0], __ranges[start_length][1]])
+                    self.findSection(__rightranges, 'dance-routine', line, [__ranges[start_length][0], __ranges[start_length][1]])
+            if not __leftranges:
+                outputfile.write(str(line)+"\n")
+        if not __leftranges:
+            return
+
+        __singleranges = []
+        for rangeindex in range(len(__ranges)):
+            if not __ranges[rangeindex] in __leftranges and not __ranges[rangeindex] in __rightranges:
+                __singleranges.append(__ranges[rangeindex])
+        for singlerange in range(len(__singleranges)):
+            if __singleranges[singlerange][0] > min(__leftranges[0][0], __rightranges[0][0]):
+                for chartrange in range(__singleranges[singlerange][0]-__singleranges[singlerange][0], __singleranges[singlerange][1]-__singleranges[singlerange][0]+1):
+                    outputfile.write(self.file[__singleranges[singlerange][0]-1+chartrange]+"\n")
+        #separate sections
+        __leftsections = []
+        __rightsections = []
+        __leftmeasures = []
+        __rightmeasures = []
+        if len(__leftranges) == len(__rightranges):
+            for sectionindex in range(len(__leftranges)):
+                __leftsections.append(self.file[__leftranges[sectionindex][0]:__leftranges[sectionindex][1]-1])
+                __rightsections.append(self.file[__rightranges[sectionindex][0]:__rightranges[sectionindex][1]-1])
+                __leftmeasures.append(self.measureDivider(__leftsections[sectionindex], ","))
+                __rightmeasures.append(self.measureDivider(__rightsections[sectionindex], ","))
+        
+        #unite everything
+        __newmeasures = []
+        __newcharts = []
+        if len(__leftmeasures) == len(__rightmeasures):
+            for chartindex in range(len(__leftmeasures)):
+                __newsections = []
+                if len(__leftmeasures[chartindex]) == len(__rightmeasures[chartindex]):
+                    for sectionindex in range(len(__leftmeasures[chartindex])):
+                        __newbeats = []
+                        __sectionlcm = math.lcm(len(__leftmeasures[chartindex][sectionindex]), len(__rightmeasures[chartindex][sectionindex]))
+                        self.correctMeasure(__sectionlcm, __leftmeasures[chartindex][sectionindex])
+                        self.correctMeasure(__sectionlcm, __rightmeasures[chartindex][sectionindex])
+                        for beatindex in range(__sectionlcm):
+                            __leftappend = __leftmeasures[chartindex][sectionindex][beatindex][:4]
+                            __rightappend = __rightmeasures[chartindex][sectionindex][beatindex][4:]
+                            __newbeats.append(__leftappend+__rightappend)
+                        __newsections.append(__newbeats)
+                __newcharts.append(__newsections)
+            __newmeasures.append(__newcharts)
+        
+        #paste everything
+        
+        for chartindex in range(len(__newmeasures)):
+            for sectionindex in range(len(__newmeasures[chartindex])):
+                outputfile.write(str(self.file[__leftranges[sectionindex][0]-1])+"\n")
+                for beatindex in range(len(__newmeasures[chartindex][sectionindex])):
+                    __unconcatenated_beats = []
+                    for arrowindex in range(len(__newmeasures[chartindex][sectionindex][beatindex])):
+                        __unconcatenated_beats.append(__newmeasures[chartindex][sectionindex][beatindex][arrowindex])
+                    for uncbeatindex in range(len(__unconcatenated_beats)):
+                        for uncarrowindex in range(len(__unconcatenated_beats[uncbeatindex])):
+                            outputfile.write(str(__unconcatenated_beats[uncbeatindex][uncarrowindex]))
+                        outputfile.write("\n")
+                    outputfile.write(",\n")
+                outputfile.write(";\n")
+        return
+                    
+    def findSection(self, group, string, line, line_number):
+        if string in line:
+            group.append(line_number)
+        return group
+    
+    def recursiveSubtractor(self, group, limiter):
+        self.group = group
+        self.limiter = limiter
+        for length in range(len(self.group)):
+            if self.group[length] < self.limiter:
+                self.group.pop(0)
+                self.recursiveSubtractor(self.group, self.limiter)
+            return self.group
+        return
+    
+    def measureDivider(self, group, dividerstring):
+        __beats = []
+        __measures = []
+        self.__group = group
+        self.__dividerstring = dividerstring
+        for measureindex in range(len(self.__group)):
+            for beatindex in range(len(self.__group[measureindex])):
+                if not self.__group[measureindex][beatindex] == self.__dividerstring:
+                    if not beatindex % 8:
+                        __beats.append([self.__group[measureindex][beatindex],self.__group[measureindex][beatindex+1],self.__group[measureindex][beatindex+2],self.__group[measureindex][beatindex+3],self.__group[measureindex][beatindex+4],self.__group[measureindex][beatindex+5],self.__group[measureindex][beatindex+6],self.__group[measureindex][beatindex+7]])
+                else:
+                    __measures.append(__beats)
+                    __beats = []
+        return __measures
+
+    def correctMeasure(self, lcm, measure):
+        self.__lcm = lcm
+        self.__measure = measure
+        self.__length = len(self.__measure)
+        if self.__lcm > self.__length:
+            self.__modulo = ((self.__lcm-self.__length)//self.__length)+1
+            for lcmrange in range(self.__length-1, -1, -1):
+                for modulorange in range(1, self.__modulo+1):
+                    if modulorange % self.__modulo:
+                        self.__measure.insert(lcmrange+1, [0,0,0,0,0,0,0,0])
+        return
+
 if __name__ == "__main__":
     file = sys.argv[1]
-    #file = "ss4/MU_DDR_012.ss4"
-    reader = SsfourReader(bytearray(open(file, "rb").read()))
+    output = file+".sm"
+    reader = SsfourReader(bytearray(open(file, "rb").read()), open(output, "w"))
+    merger = MergeCouples(open(output, "r").read(), output)
