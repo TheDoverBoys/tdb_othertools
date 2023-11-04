@@ -256,7 +256,7 @@ class SsfourReader:
         
 class MergeCouples:
     def __init__(self, file, output):
-        __unconcatenated = open("output"+output, "w")
+        __unconcatenated = open(output, "w")
         __charts = []
         self.sectionFinder(str(file), __unconcatenated)
         
