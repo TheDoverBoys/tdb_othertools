@@ -85,6 +85,7 @@ class SsfourReader:
     def parseNotes(self, chunk):
         __chart_type = {
             0x14: "dance-single",
+            0x18: "dance-double",
             0x24: "dance-couple",           # Couple 1P
             0x34: "dance-routine"           # Couple 2P
         }
@@ -106,7 +107,11 @@ class SsfourReader:
             0x00: "Left",
             0x01: "Down",
             0x02: "Up",
-            0x03: "Right"
+            0x03: "Right",
+            0x04: "Left 2P",
+            0x05: "Down 2P",
+            0x06: "Up 2P",
+            0x07: "Right 2P"
         }
         #__length = int.from_bytes(chunk[0:4], "little")
         __type = int.from_bytes(chunk[4:6], "little")
@@ -174,7 +179,10 @@ class SsfourReader:
                     self.reduction(__measures)
                     self.recursionApproximate(__measures[measureindex])
                     if not __measures[measureindex]:
-                        __measure_write = [[0,0,0,0]]
+                        if not charts[chart][0] == "dance-double":
+                            __measure_write = [[0,0,0,0]]
+                        else:
+                            __measure_write = [[0,0,0,0,0,0,0,0]]
                         __measureAppend.append(__measure_write*4)
                     else:
                         __measure_divide = []
@@ -183,12 +191,18 @@ class SsfourReader:
                             __measure_divide.append(__measures[measureindex][beatindex][3])
                         __measure_max_divide = int(max(__measure_divide))
                         for i in range(__measure_max_divide):
-                            __measure_write.append([0,0,0,0])
+                            if not charts[chart][0] == "dance-double":
+                                __measure_write.append([0,0,0,0])
+                            else:
+                                __measure_write.append([0,0,0,0,0,0,0,0])
                         for beatindex in range(len(__measures[measureindex])):
                             __measures[measureindex][beatindex][0] *= __measure_max_divide/__measures[measureindex][beatindex][3]
                             __measures[measureindex][beatindex][3] = __measure_max_divide
                         __measureAppend.append(__measure_write)
-                __lastbeat = [None]*4
+                if not charts[chart][0] == "dance-double":
+                    __lastbeat = [None]*4
+                else:
+                    __lastbeat = [None]*8
                 for measureindex in range(len(__measureAppend)):
                     if __measures[measureindex]:
                         for barget in range(len(__measures[measureindex])):
