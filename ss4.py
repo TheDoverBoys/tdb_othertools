@@ -131,6 +131,9 @@ class SsfourReader:
                 for i in range(__note_number):
                     if __note_lookup.get(chunk[12+i+(__note_number*4)]):
                         __note = chunk[12+i+(__note_number*4)]
+                        if not __chart_type.get(__chart) == "dance-double" and __note > 3:
+                            print("Invalid note value for this chart type! "+str(__note))
+                            continue
                         __beat = (int.from_bytes(chunk[13+(i*4):16+(i*4)], "little") + chunk[12+(i*4)]/256)/4
                         __freezeend = chunk[14+(i*4)+(__note_number*4)+(__note_number+__modulo)]
                         __beats.append(__beat)
