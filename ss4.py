@@ -40,15 +40,33 @@ class SsfourReader:
         __beats = []
         __seconds = []
         for i in range(__tempo_event_number):
-            __beat = (int.from_bytes(chunk[13+(i*4):16+(i*4)], "little") + chunk[12+(i*4)]/256)/4
-            __second = int.from_bytes(chunk[20+(i*4)+((__tempo_event_number-2)*4):24+(i*4)+((__tempo_event_number-2)*4)], "little")
+            __beat = int.from_bytes(chunk[12+(i*4):16+(i*4)], byteorder='little', signed=True)/1024
+            __second = int.from_bytes(chunk[20+(i*4)+((__tempo_event_number-2)*4):24+(i*4)+((__tempo_event_number-2)*4)], byteorder='little', signed=True)
             __beats.append(__beat)
             __seconds.append(__second/(__tick_rate/__beat_divider))
 
         __bpms = []
         __stops = []
         __warps = []
-        __offset = __seconds[0]*(-1)
+
+        try:
+            __start_position = __beats.index(0)
+        except:
+            __start_position = [None]
+        else:
+            __start_position = __beats.index(0)
+        
+        if __start_position == [None]:
+            __beat_interval = __beats[1]-__beats[0]
+            __seconds_interval = __seconds[1]-__seconds[0]
+            __incrim_bpm = (__beat_interval/__seconds_interval)*60
+            __incriminator = __beats[0]*(-1)
+            __beats[0] += __incriminator
+            __seconds[0] -= (60/__incrim_bpm)*(__incriminator*(-1))
+            __offset = __seconds[0]*(-1)
+        else:
+            __offset = __seconds[__start_position]*(-1)
+
         for i in range(len(__beats)-1):
             __beat_interval = __beats[i+1]-__beats[i]
             __seconds_interval = __seconds[i+1]-__seconds[i]
@@ -57,10 +75,11 @@ class SsfourReader:
             elif __seconds_interval == 0:
                 __warps.append([__beats[i], __beat_interval])
             elif __beat_interval == 0 and __seconds_interval == 0:
-                pass
+                continue
             else:
                 __bpm = [__beats[i], (__beat_interval/__seconds_interval)*60]
                 __bpms.append(__bpm)
+
         return (__bpms, __stops, __warps, __offset)
     
     def parseEvents(self, chunk):
@@ -76,7 +95,7 @@ class SsfourReader:
         #__length = int.from_bytes(chunk[0:4], "little")
         __event_number = int.from_bytes(chunk[8:12], "little")
         for i in range(__event_number):
-            __beat = (int.from_bytes(chunk[13+(i*4):16+(i*4)], "little") + chunk[12+(i*4)]/256)/4
+            __beat = int.from_bytes(chunk[12+(i*4):16+(i*4)], byteorder='little', signed=True)/1024
             __event = chunk[20+(i*2)+((__event_number-2)*4)]
             if __event == 0x02: __events.append([__beat, subevent_lookup.get(chunk[21+(i*2)+((__event_number-2)*4)])])
             elif __event == 0x01: __timesignatures.append([__beat, chunk[21+(i*2)+((__event_number-2)*4)]])
@@ -134,7 +153,7 @@ class SsfourReader:
                         if not __chart_type.get(__chart) == "dance-double" and __note > 3:
                             print("Invalid note value for this chart type! "+str(__note))
                             continue
-                        __beat = (int.from_bytes(chunk[13+(i*4):16+(i*4)], "little") + chunk[12+(i*4)]/256)/4
+                        __beat = int.from_bytes(chunk[12+(i*4):16+(i*4)], byteorder='little', signed=True)/1024
                         __freezeend = chunk[14+(i*4)+(__note_number*4)+(__note_number+__modulo)]
                         __beats.append(__beat)
                         __notes.append(__note)
