@@ -1,5 +1,8 @@
 # other tools for different things
 
+### dce.py
+converts from ddr dce's chart format to sm
+
 ### ss4.py
 rather hasty ss4 to sm converter  
 cannot convert choreograph and balance board charts
