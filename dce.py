@@ -237,7 +237,7 @@ class SsfourReader:
                             if (charts[chart][2][freezearrowindex][0] == __measures[measureindex][beatindex][0]) and (charts[chart][2][freezearrowindex][1] == __measures[measureindex][beatindex][1]):
                                 __measures[measureindex][beatindex].append(True)
                 
-                print(__measures)
+                #print(__measures)
                 output.write(__chartString)
                 __measureAppend = []
                 
