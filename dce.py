@@ -220,7 +220,7 @@ class SsfourReader:
                 for event in range(len(events[0])):
                     if events[0][event][1] == 'last_finish':
                         __lastbeat = events[0][event][0]
-                        __lastmeasure = math.ceil(__lastbeat/4)
+                        __lastmeasure = math.ceil(__lastbeat/4)+1
                 __measures = []
                 __beatAppend = []
                 for beatcount in range(1+__lastmeasure*4):
@@ -236,7 +236,8 @@ class SsfourReader:
                         for beatindex in range(len(__measures[measureindex])):
                             if (charts[chart][2][freezearrowindex][0] == __measures[measureindex][beatindex][0]) and (charts[chart][2][freezearrowindex][1] == __measures[measureindex][beatindex][1]):
                                 __measures[measureindex][beatindex].append(True)
-
+                
+                print(__measures)
                 output.write(__chartString)
                 __measureAppend = []
                 
@@ -268,8 +269,7 @@ class SsfourReader:
                     __lastbeat = [None]*8
                 else:
                     __lastbeat = [None]*4
-                #print(__measureAppend)
-                
+
                 __freezepool = []
                 for measureindex in range(len(__measureAppend)):
                     if __measures[measureindex]:
