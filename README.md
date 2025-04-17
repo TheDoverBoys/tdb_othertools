@@ -1,5 +1,8 @@
 # other tools for different things
 
+### croketPS1.py
+extracts files from Croket! Kindan no Kinka Box! (PS1)
+
 ### dce.py
 converts from ddr dce's chart format to sm
 
