@@ -13,11 +13,11 @@ def everything(file):
         else:
             if fileData[i] < 0x88 and fileData[i] >= 0x20:
                 textContents.write(fileData[i].to_bytes(2, byteorder='big'))
-            elif fileData[i] >= 0x88:
+            elif fileData[i] >= 0x88 and fileData[i] < 0xD4:
                 consonantOne = (fileData[i]-0x88)//4
                 vowel = (((fileData[i]&0x0F)%0x04)<<4)+(((fileData[i+1]>>4)//2)*2)
                 consonantTwo = fileData[i+1]%0x20
-                if vowel < 0x06 or fileData[i+1] == 0x00:
+                if vowel < 0x06 or (vowel >= 0x06 and vowel%0x10 < 0x04) or vowel > 0x3A or fileData[i+1] == 0x00:
                     char = conso_lookup[consonantOne]
                 else:
                     char = 0xAC00 + (0x024C * consonantOne) + (0x1C * vowel_lookup.index(vowel)) + (consonantTwo-1-(consonantTwo//0x12))
