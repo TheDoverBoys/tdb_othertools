@@ -20,8 +20,7 @@ def everything(file):
                 if vowel < 0x06 or fileData[i+1] == 0x00:
                     char = conso_lookup[consonantOne]
                 else:
-                    try: char = 0xAC00 + (0x024C * consonantOne) + (0x1C * vowel_lookup.index(vowel)) + (consonantTwo-1)
-                    except TypeError as e: raise Exception("Unknown second consonant combination: " + str(hex(consonantTwo))) from e
+                    char = 0xAC00 + (0x024C * consonantOne) + (0x1C * vowel_lookup.index(vowel)) + (consonantTwo-1-(consonantTwo//0x12))
                 textContents.write(char.to_bytes(2, byteorder='big'))
                 if fileData[i+1] == 0x00:
                     textContents.write("\n".encode("utf-16-be"))
