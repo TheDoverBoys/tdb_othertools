@@ -1,8 +1,6 @@
 import sys
 
 def everything(file, output):
-    if output is None:
-        output = (file + "_output.txt")
     conso_lookup = [0x1100, 0x3132, 0x3134, 0x3137, 0x3138, 0x3139, 0x3141, 0x3142, 0x3143, 0x3145, 0x3146, 0x3147, 0x3148, 0x3149, 0x314a, 0x314b, 0x314c, 0x314d, 0x314e]
     fileData = open(file, "rb").read()
     textContents = open(output,"wb")
@@ -40,5 +38,5 @@ if __name__ == "__main__":
     try:
         output = sys.argv[2]
     except:
-        output = None
+        output = (file + "_output.txt")
     everything(file, output)
