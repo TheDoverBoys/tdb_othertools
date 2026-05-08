@@ -16,3 +16,7 @@ cannot convert choreograph and balance board charts
 ### tex_SsambaFestival_gsb.py
 parser for gsb texture files, used in the obscure pc-based arcade game ssamba festival, for use on noesis  
 place on plugins\python folder to load
+
+### xor.py
+script for putting files through a xor key  
+alternatively you can change line 17 so that it opens "sys.argv[2]" instead of a predetermined file
