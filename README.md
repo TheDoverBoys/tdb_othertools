@@ -9,6 +9,10 @@ converts from ddr dce's chart format to sm
 ### diact.py
 decodes korean text from the cd-roms of dance dance diact
 
+### iidx6.py
+WORK IN PROGRESS CODE - EXPECT BAD RESULTS  
+decrypting script for beatmania IIDX 6th style (AC)
+
 ### ss4.py
 rather hasty ss4 to sm converter  
 cannot convert choreograph and balance board charts
